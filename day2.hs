@@ -3,8 +3,9 @@ module Day2 where
 import Data.Char
 import Data.List
 import Text.ParserCombinators.ReadP
+import qualified Data.Text as T
 
-data Entry = Entry Int Int Char String deriving Show
+data Entry = Entry Int Int Char T.Text deriving Show
 
 number :: ReadP Int
 number = read <$> many1 (satisfy isDigit)
@@ -25,22 +26,24 @@ entry = do
   skipSpaces
   char <- letter
   string ": "
-  password <- many1 letter
+  password <- T.pack <$> many1 letter
   eof
   return $ Entry low high char password
 
 
 parseEntries :: String -> [Entry]
-parseEntries s = lines s >>= readP_to_S entry >>= return . fst
+parseEntries s = lines s  -- split into lines
+               >>= readP_to_S entry  -- parse each line to *one* (Entry, String) pair
+               >>= return . fst  -- collect each Entry
 
 verifyA :: Entry -> Bool
 verifyA (Entry low high char password) = low <= n && n <= high
-   where n = length (filter (== char) password)
+   where n = T.length (T.filter (== char) password)
 
 verifyB :: Entry -> Bool
 verifyB (Entry low high char password) = (c1 == char || c2 == char ) && c1 /= c2
-   where c1 = password !! (low - 1)
-         c2 = password !! (high - 1)
+   where c1 = T.index password (low - 1)
+         c2 = T.index password (high - 1)
 
 countValid :: (Entry -> Bool) -> [Entry] -> Int
 countValid = (length . ) . filter
