@@ -1,0 +1,5 @@
+This directory contains my solutions for Advent of Code 2020 (https://adventofcode.com/2020).
+
+Usually, I use this to practice Haskell, but this year I'd like to actually
+finish the calendar, which means I'll solve each puzzle in Python first, and
+add a Haskell solution time permitting.
