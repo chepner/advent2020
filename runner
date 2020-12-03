@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+
+import argparse
+import importlib
+
+
+p = argparse.ArgumentParser()
+p.add_argument("day", type=int)
+p.add_argument("--a")
+p.add_argument("--b")
+args = p.parse_args()
+
+module_name = f'day{args.day:02}'
+
+m = importlib.import_module(module_name)
+
+input_a = args.a or f'day{args.day:02}.input'
+input_b = args.b or f'day{args.day:02}.input'
+
+
+with open(input_a) as f:
+    answer = m.main_a(f)
+    print(f'Part a: {answer}')
+
+with open(input_b) as f:
+    answer = m.main_b(f)
+    print(f'Part b: {answer}')
