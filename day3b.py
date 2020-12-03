@@ -14,7 +14,7 @@ for x_delta, y_delta in [(1, 1), (3, 1), (5, 1), (7,1), (1, 2)]:
     # We can assume there is no tree in the first square,
     # start = row.find('.')
     start = 0
-    xs = count(start+x_delta, y_delta*x_delta)
+    xs = count(start+x_delta, x_delta)
     for x, row in zip(xs, map_pattern):
         for _ in range(y_delta-1):
             next(map_pattern)
