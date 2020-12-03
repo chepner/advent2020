@@ -1,5 +1,5 @@
 import fileinput
-from itertools import count
+from itertools import count, islice
 from functools import reduce
 from operator import mul
 
@@ -7,7 +7,8 @@ map_input = list(fileinput.input())
 
 tree_counts = []
 for x_delta, y_delta in [(1, 1), (3, 1), (5, 1), (7,1), (1, 2)]:
-    map_pattern = iter(map_input)
+    print(f"Slope: right {x_delta}, down {y_delta}")
+    map_pattern = islice(map_input, 0, None, y_delta)
 
     trees = 0
     row = next(map_pattern)
@@ -16,8 +17,6 @@ for x_delta, y_delta in [(1, 1), (3, 1), (5, 1), (7,1), (1, 2)]:
     start = 0
     xs = count(start+x_delta, x_delta)
     for x, row in zip(xs, map_pattern):
-        for _ in range(y_delta-1):
-            next(map_pattern)
         row = row.strip()
         x = x%len(row)
         # print(" "*x + "v")
@@ -30,5 +29,7 @@ for x_delta, y_delta in [(1, 1), (3, 1), (5, 1), (7,1), (1, 2)]:
 
 
 # 3102624000 is too big
+# 2286144000 is too big
+# 2122848000
 print(tree_counts)
 print(reduce(mul, tree_counts))
