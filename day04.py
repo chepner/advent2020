@@ -11,19 +11,30 @@ class Passport:
     hcl: str
     ecl: str
     pid: str
-    cid: str
+    cid: str = None
 
 
 def read_passport_data(f:Iterable[str] ) -> Iterable[dict[str,str]]:
     current = []
+    count = 0
+    total = 0
+    nonempty = 0
     for line in f:
+        total += 1
         line = line.strip()
         if line:
+            nonempty += 1
             fields = line.split()
             current.extend(fields)
         elif current:
             yield dict(field.split(":") for field in current)
+            count += 1
             current = []
+    if current:
+        count += 1
+        yield dict(field.split(":") for field in current)
+
+    print(f'{count} passports read on {nonempty}/{total} lines')
 
 
 def validate_passports(p: Iterable[dict[str,str]]) -> list[Passport]:
