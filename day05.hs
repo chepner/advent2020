@@ -5,6 +5,7 @@ import Control.Monad
 import Data.List
 
 data HiLo = Hi | Lo deriving Show
+type BoardingPass = ([HiLo], [HiLo])
 type Seat = (Int, Int)
 
 bsp ::  Int -> Int -> [HiLo] -> Int
@@ -15,7 +16,7 @@ bsp low high xs  = go xs low high
          mid x y = (x + y) `div` 2
 
 
-parseBoardingPass :: String -> ([HiLo], [HiLo])
+parseBoardingPass :: String -> BoardingPass
 parseBoardingPass = bimap (map row) (map seat) . split
    where split = take 7 &&& drop 7
 
@@ -27,7 +28,7 @@ seat :: Char -> HiLo
 seat 'L' = Lo
 seat 'R' = Hi
 
-passToSeat :: ([HiLo], [HiLo]) -> Seat
+passToSeat :: BoardingPass -> Seat
 passToSeat (row, seat) = (r, c)
    where r = bsp 0 127 row
          c = bsp 0 7 seat
@@ -35,7 +36,7 @@ passToSeat (row, seat) = (r, c)
 seatToSeatID :: Seat -> Int
 seatToSeatID (r, c) = 8*r + c
 
-passToSeatID :: ([HiLo], [HiLo]) -> Int
+passToSeatID :: BoardingPass -> Int
 passToSeatID = seatToSeatID . passToSeat
 
 allSeats :: [Seat]
@@ -45,6 +46,7 @@ main = do
   contents <- readFile "day05.input"
   let boardingPasses =  map parseBoardingPass (lines contents)
       seats = sort $ map passToSeat boardingPasses
+  print "Part a"
   print $ maximum (map seatToSeatID seats)
 
   -- Eyballing this output, I noticed rows 0 through 5 were missing
@@ -57,4 +59,5 @@ main = do
 
   -- traverse print (allSeats \\ seats)
 
+  print "Part b"
   print $ 93*8 + 3
