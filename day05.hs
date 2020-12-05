@@ -46,3 +46,15 @@ main = do
   let boardingPasses =  map parseBoardingPass (lines contents)
       seats = sort $ map passToSeat boardingPasses
   print $ maximum (map seatToSeatID seats)
+
+  -- Eyballing this output, I noticed rows 0 through 5 were missing
+  -- in their entirety, as well as most of row 115 and rows 116-127.
+  --
+  -- Since my seat is not int he back row, that elimiantes (115, 0)
+  -- -- through (115,2), leaving only
+  --
+  -- (93, 3)
+
+  -- traverse print (allSeats \\ seats)
+
+  print $ 93*8 + 3
