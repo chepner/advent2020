@@ -32,19 +32,20 @@ contents = do count <- number
 nocontents :: ReadP [(Color, Int)]
 nocontents = string "no other bags" >> return []
 
--- Maps a color with the colors that can directly contain it
-type GraphA = M.Map Color [Color]
-type GraphB = M.Map Color [(Color, Int)]
+totalcontents :: ReadP [(Color, Int)]
+totalcontents = nocontents +++ sepBy1 contents (string ", ")
 
 rule :: ReadP (Color, [(Color, Int)])
 rule = do outer <- color
           string " bags contain"
           skipSpaces
-          list <- choice [nocontents, sepBy1 contents (string ", ")]
+          list <- totalcontents
           string "."
           return (outer, list)
-          -- return $ M.fromList [ (fst x, [outer]) | x <- list]
 
+-- Maps a color with the colors that can directly contain it
+type GraphA = M.Map Color [Color]
+type GraphB = M.Map Color [(Color, Int)]
 
 -- Graph search to find all colors that can transitively contain a given color
 getContainers :: GraphA -> Color -> [Color]
