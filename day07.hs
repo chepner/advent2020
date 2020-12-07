@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 import System.Environment
 import Text.ParserCombinators.ReadP
 import Data.Char
@@ -5,10 +6,7 @@ import Data.Maybe
 import Data.List
 import qualified Data.Map as M
 
-type Color = String
-
-digit :: ReadP Char
-digit = satisfy isDigit
+newtype Color = Color String deriving (Eq, Ord)
 
 number :: ReadP Int
 number = read <$> many1 (satisfy isDigit)
@@ -16,11 +14,11 @@ number = read <$> many1 (satisfy isDigit)
 letters :: ReadP String
 letters = many1 (satisfy isAlpha)
 
-color :: ReadP String
+color :: ReadP Color
 color = do adj <- letters
            skipSpaces
            name <- letters
-           return $ adj ++  " " ++ name
+           return $ Color $ adj ++ " " ++ name
 
 contents :: ReadP (Color, Int)
 contents = do count <- number
@@ -72,10 +70,12 @@ main = do
    let alistPartA = map (\(c, cs) -> [(x, [c]) | (x,_) <- cs]) rules
    let graphPartA = M.unionsWith (++) $ map M.fromList alistPartA
 
+   let myBagColor = Color "shiny gold"
+
    print "Part a"
-   print $ length $ nub $ getContainers graphPartA "shiny gold"
+   print $ length $ nub $ getContainers graphPartA myBagColor
 
    print "Part b"
    let graphPartB = M.fromList rules
-   print $ getContained graphPartB "shiny gold"
+   print $ getContained graphPartB myBagColor
 
