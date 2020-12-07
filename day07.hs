@@ -52,14 +52,14 @@ getContainers :: GraphA -> Color -> [Color]
 getContainers g c = let direct = fromMaybe [] (M.lookup c g)
                     in direct ++ concatMap (getContainers g) direct
 
-
+-- Recursively compute the weight of a single bag, based on the weights
+-- of the required contents
 getContained :: GraphB -> Color -> Int
 getContained g c = let contents = fromMaybe [] (M.lookup c g)
                        colors = map fst contents
                        counts = map snd contents
                        contained = sum ( zipWith (*) (map (getContained g) colors) counts)
                    in sum counts + contained
-
 
 main = do
    args <- getArgs
