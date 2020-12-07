@@ -11,13 +11,10 @@ digit :: ReadP Char
 digit = satisfy isDigit
 
 number :: ReadP Int
-number = read <$> many1 digit
-
-letter :: ReadP Char
-letter = satisfy isAlpha
+number = read <$> many1 (satisfy isDigit)
 
 letters :: ReadP String
-letters = many1 letter
+letters = many1 (satisfy isAlpha)
 
 color :: ReadP String
 color = do adj <- letters
