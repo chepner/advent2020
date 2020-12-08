@@ -1,6 +1,6 @@
 import fileinput
 from typing import Iterable, Type, TypeVar
-from dataclasses import dataclass
+from itertools import chain, combinations
 import re
 
 
@@ -52,20 +52,31 @@ def run_program(prg):
             raise InvalidOpcodeError(ps=state, opcode=instr)
 
 
-def alt_programs(prg):
-    yield prg
+# From itertools recipes
+def power(iterable):
+    s = list(iterable)
+    return chain.from_iterable(combinations(s, r) for r in range(len(s) + 1))
 
-            
+
 # Change a jmp to a no-op or vice versa
 def fix_program(prg):
+    jmp_or_nop = [i for i, (instr, _) in enumerate(prg) if instr == "jmp" or instr == "nop"]
+    
+    for alteration in power(jmp_or_nop):
+        new_prog = prg[:]
+        for i in alteration:
+            if prg[i][0] == "jmp":
+                new_prog[i] = ("nop", prg[i][1])
+            elif prg[i][0] == "nop":
+                new_prog[i] = ("jmp", prg[i][1])
 
-    for p in alt_programs(prg):
         try:
-            rv = run_program(p)
+            rv = run_program(new_prog)
             print(f"Accumulator = {rv}")
-            return p
-        except ProgramError:
-            pass
+            return new_prog
+
+        except ProgramError as exc:
+            print(f"Failed: {exc!r}")
 
     raise RuntimeError("Cannot fix infinite recursion") 
 
