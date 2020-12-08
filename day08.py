@@ -72,11 +72,12 @@ def fix_program(prg):
 
         try:
             rv = run_program(new_prog)
-            print(f"Accumulator = {rv}")
+            # print(f"Accumulator = {rv.acc}")
             return new_prog
 
         except ProgramError as exc:
-            print(f"Failed: {exc!r}")
+            pass
+            # print(f"Failed: {exc!r}")
 
     raise RuntimeError("Cannot fix infinite recursion") 
 
