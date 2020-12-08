@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-import Options.Applicative
+import qualified Options.Applicative as OA
 import Text.ParserCombinators.ReadP
 import Data.Char
 import Data.Maybe
@@ -63,19 +63,21 @@ getContained g c = let contents = fromMaybe [] (M.lookup c g)
 
 
 newtype Options = Options {
-  fileName :: Filepath
+  fileName :: FilePath
 }
 
-options :: Parser Options
-options = Options <$> argument Filepath (metavar "FILE")
+options :: OA.Parser Options
+options = Options <$> OA.argument OA.str (OA.metavar "FILE")
+
+p = OA.info (options OA.<**> OA.helper)
+    ( OA.fullDesc
+      <> OA.progDesc "Solve Day 7 for Advent of Code 2020"
+      <> OA.header "Advent 2020: Day 7" )
 
 main = do
-   fname <- execParser $ info (opts <**> helper)
-                                ( fullDesc
-                                  <> progDesc "Solve Day 7 for Advent of Code 2020"
-                                  <> header "Advent 2020: Day 7" )
+   args <- OA.execParser p
 
-   text_rules <- lines <$> readFile fname
+   text_rules <- lines <$> readFile (fileName args)
 
    let rules = map (fst . head . readP_to_S rule) text_rules
 
