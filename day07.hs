@@ -1,5 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-import System.Environment
+import Options.Applicative
 import Text.ParserCombinators.ReadP
 import Data.Char
 import Data.Maybe
@@ -61,9 +61,20 @@ getContained g c = let contents = fromMaybe [] (M.lookup c g)
                        contained = sum ( zipWith (*) (map (getContained g) colors) counts)
                    in sum counts + contained
 
+
+newtype Options = Options {
+  fileName :: Filepath
+}
+
+options :: Parser Options
+options = Options <$> argument Filepath (metavar "FILE")
+
 main = do
-   args <- getArgs
-   let fname = args !! 0
+   fname <- execParser $ info (opts <**> helper)
+                                ( fullDesc
+                                  <> progDesc "Solve Day 7 for Advent of Code 2020"
+                                  <> header "Advent 2020: Day 7" )
+
    text_rules <- lines <$> readFile fname
 
    let rules = map (fst . head . readP_to_S rule) text_rules
