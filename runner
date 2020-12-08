@@ -2,6 +2,7 @@
 
 import argparse
 import importlib
+from pathlib import Path
 
 
 p = argparse.ArgumentParser()
@@ -14,14 +15,14 @@ module_name = f'day{args.day:02}'
 
 m = importlib.import_module(module_name)
 
-input_a = args.a or f'day{args.day:02}.input'
-input_b = args.b or f'day{args.day:02}.input'
+input_a = Path(args.a or f'day{args.day:02}.input')
+if input_a.exists():
+    with input_a.open() as f:
+        answer = m.main_a(f)
+        print(f'Part a: {answer}')
 
-
-with open(input_a) as f:
-    answer = m.main_a(f)
-    print(f'Part a: {answer}')
-
-with open(input_b) as f:
-    answer = m.main_b(f)
-    print(f'Part b: {answer}')
+input_b = Path(args.b or f'day{args.day:02}.input')
+if input_b.exists():
+    with input_b.open() as f:
+        answer = m.main_b(f)
+        print(f'Part b: {answer}')
