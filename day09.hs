@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 import qualified Options.Applicative as OA
+import Data.List (inits)
 
 newtype Options = Options {
   fileName :: FilePath
@@ -29,9 +30,26 @@ findInvalid xs = let prefix = take 25 xs
                      match = any (\(x,y) -> x + y == target) candidates
                  in if match then findInvalid (tail xs) else target
 
+-- Should use dynamic programming for part b, but this is fast enough
+generateRanges :: [Int] -> [[Int]]
+-- ^ Generate all subranges (with at least 2 elements) of a list of integers. For example,
+-- generateRange [1,2,3] = [[1,2],[1,2,3],[2,3]]
+-- As currently written, this would not work on infinite lists.
+generateRanges [] = []
+generateRanges xs = (drop 2 (inits xs)) ++ generateRanges (tail xs)
+
+-- | Find a range that sums to a target value
+findRange :: [Int] -> Int -> [Int]
+findRange xs t = head $ filter ((==) t . sum) (generateRanges xs)
+
 main = do
    args <- OA.execParser p
    numbers <- readNumbers (fileName args)
 
    putStrLn "Part a"
-   print (findInvalid numbers)
+   let part_a = findInvalid numbers
+   print part_a
+
+   putStrLn "Part b"
+   let result = findRange numbers part_a
+   print $ minimum result + maximum result
