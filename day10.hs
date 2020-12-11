@@ -2,7 +2,7 @@
 import qualified Options.Applicative as OA
 import Data.List (sort, tails)
 import Data.Function ((&))
-import Control.Monad (guard)
+import Data.Function.Memoize
 
 data Options = Options {
     fileName :: FilePath
@@ -42,12 +42,15 @@ arrangements (x:xs) = let p [] = False
                           continuations = filter p (tails xs)
                       in map (x:) (continuations >>= arrangements)
 
-countArrangements :: [Int] -> Int
-countArrangements [x] = 1
-countArrangements (x:xs) = let p [] = False
-                               p (y:_) = y <= x + 3
-                               continuations = filter p (tails xs)
-                           in sum (map countArrangements continuations)
+countArrangements :: ([Int] -> Int) -> [Int] -> Int
+countArrangements _ [x] = 1
+countArrangements mf (x:xs) = let p [] = False
+                                  p (y:_) = y <= x + 3
+                                  continuations = filter p (tails xs)
+                              in sum (map mf continuations)
+
+countMemo = memoFix countArrangements
+
 
 main = do
    args <- OA.execParser p
@@ -57,5 +60,6 @@ main = do
    makeList numbers & diffs & part_a & print
 
    putStrLn "Part b"
-   print (makeList numbers)
-   makeList numbers & take (count args) & countArrangements & print
+   -- print (makeList numbers)
+   -- makeList numbers & take (count args) & countMemo & print
+   makeList numbers & countMemo & print
