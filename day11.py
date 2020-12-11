@@ -1,6 +1,6 @@
 import fileinput
 from typing import Iterable, Type, TypeVar
-from itertools import product
+from itertools import product, count
 
 
 def parse_floorplan(f):
@@ -14,6 +14,18 @@ def get(floorplan, s):
     x, y = s
     if 0 <= x < len(floorplan[0]) and 0 <= y < len(floorplan):
         return floorplan[y][x]
+
+def get_visible(floorplan, x, xd, y, yd):
+    for xp, yp in zip(count(x+xd, xd), count(y+yd, yd)):
+        if 0 <= xp < len(floorplan[0]) and 0 <= yp < len(floorplan):
+            state = floorplan[yp][xp]
+        else:
+            return None
+
+        if state == ".":
+            continue
+
+        return state
 
 
 def neighbors_a(floorplan, s):
@@ -30,7 +42,7 @@ def neighbors_b(floorplan, s):
     for xd, yd in product(range(-1, 2), repeat=2):
         if xd == yd == 0:
             continue
-        if (n := get(floorplan, (x+xd, y+yd))) is not None:
+        if (n := get_visible(floorplan, x, xd, y, yd)) is not None:
             yield n
 
 
