@@ -46,41 +46,35 @@ data Position = P { heading:: Heading, posX, posY :: Int } deriving Show
 initial :: Position
 initial = P East 0 0
 
-forward :: Heading -> Heading
-forward = id
 
-turnLeft, turnRight :: Heading -> Int -> Heading
-turnLeft d 0 = d
-turnLeft d v = turnLeft (rotate90 d) (v - 90)
+turnLeft, turnRight :: Int -> Heading -> Heading
+turnLeft 0 d = d
+turnLeft v d = turnLeft (v - 90) (rotate90 d)
   where rotate90 North = West
         rotate90 West = South
         rotate90 South = East
         rotate90 East = North
 
-turnRight d 0 = d
-turnRight d v = turnRight (rotate90 d) (v - 90)
+turnRight 0 d = d
+turnRight v d = turnRight (v - 90) (rotate90 d)
   where rotate90 North = East
         rotate90 East = South
         rotate90 South = West
         rotate90 West = North
 
 
-pos :: Position -> (Int, Int)
-pos (P _ x y) = (x, y)
-
-
 -- Might be an opportunity to play with lenses
 move :: NavPair -> Position -> Position
-move nav p = let newP = move' nav p in trace (show nav ++ " -> " ++ show newP) newP
+move nav p = let newP = move' nav p in trace (show nav ++ "\n  -> " ++ show newP) newP
   where move' (NP North v) p = p { posY = posY p + v }
         move' (NP South v) p = p { posY = posY p - v }
         move' (NP West v) p = p { posX = posX p - v }
         move' (NP East v) p = p { posX = posX p + v }
         move' nav p = let h = heading p
 	              in case newHeading nav of
-                          Forward -> move (nav {newHeading = forward h}) p
-                          TurnLeft -> p { heading = turnLeft h (value nav)}
-                          TurnRight -> p { heading = turnRight h (value nav)}
+                          Forward -> move' (nav {newHeading = h}) p
+                          TurnLeft -> p { heading = turnLeft (value nav) h }
+                          TurnRight -> p { heading = turnRight (value nav) h }
 
 manhatten :: Position -> Position -> Int
 manhatten (P _ x2 y2) (P _ x1 y1) = abs (x2 - x1) + abs (y2 - y1)
