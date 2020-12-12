@@ -5,6 +5,7 @@ import Data.List (sort, tails, foldl')
 import Data.Char
 import Data.Function ((&))
 import Data.Function.Memoize
+import Debug.Trace
 
 -- Command-line boilerplate
 data Options = Options {
@@ -48,29 +49,38 @@ initial = P East 0 0
 forward :: Heading -> Heading
 forward = id
 
-turnLeft, turnRight :: Heading -> Heading
-turnLeft North = West
-turnLeft West = South
-turnLeft South = East
-turnLeft East = North
+turnLeft, turnRight :: Heading -> Int -> Heading
+turnLeft d 0 = d
+turnLeft d v = turnLeft (rotate90 d) (v - 90)
+  where rotate90 North = West
+        rotate90 West = South
+        rotate90 South = East
+        rotate90 East = North
 
-turnRight North = East
-turnRight East = South
-turnRight South = West
-turnRight West = North
+turnRight d 0 = d
+turnRight d v = turnRight (rotate90 d) (v - 90)
+  where rotate90 North = East
+        rotate90 East = South
+        rotate90 South = West
+        rotate90 West = North
+
+
+pos :: Position -> (Int, Int)
+pos (P _ x y) = (x, y)
 
 
 -- Might be an opportunity to play with lenses
 move :: NavPair -> Position -> Position
-move (NP North v) p = p { posY = posY p + v }
-move (NP South v) p = p { posY = posY p - v }
-move (NP West v) p = p { posX = posX p - v }
-move (NP East v) p = p { posX = posX p + v }
-move nav p = let h = heading p
-             in case newHeading nav of
-                  Forward -> move (nav {newHeading = forward h}) p
-                  TurnLeft -> p { heading = turnLeft h}
-                  TurnRight -> p { heading = turnRight h}
+move nav p = let newP = move' nav p in trace (show nav ++ " -> " ++ show newP) newP
+  where move' (NP North v) p = p { posY = posY p + v }
+        move' (NP South v) p = p { posY = posY p - v }
+        move' (NP West v) p = p { posX = posX p - v }
+        move' (NP East v) p = p { posX = posX p + v }
+        move' nav p = let h = heading p
+	              in case newHeading nav of
+                          Forward -> move (nav {newHeading = forward h}) p
+                          TurnLeft -> p { heading = turnLeft h (value nav)}
+                          TurnRight -> p { heading = turnRight h (value nav)}
 
 manhatten :: Position -> Position -> Int
 manhatten (P _ x2 y2) (P _ x1 y1) = abs (x2 - x1) + abs (y2 - y1)
@@ -86,6 +96,7 @@ main = do
    navpairs <- readNavPairs (fileName args)
 
    putStrLn "Part a"
+   -- traverse print navpairs
    print $ manhatten (foldl' (flip move) initial navpairs) initial
 
    putStrLn "Part b"
