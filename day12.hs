@@ -1,10 +1,8 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 import qualified Options.Applicative as OA
 import Text.ParserCombinators.ReadP
-import Data.List (sort, tails, foldl')
+import Data.List (foldl')
 import Data.Char
-import Data.Function ((&))
-import Data.Function.Memoize
 import Debug.Trace
 
 -- Command-line boilerplate
@@ -23,9 +21,10 @@ p = OA.info (options OA.<**> OA.helper)
 
 -- End command-line boilerplate
 
-data Heading = North | South | East | West | Forward | TurnLeft | TurnRight deriving Show
+data Direction = North | South | East | West deriving Show
+data Action = Go Direction | Advance | TurnLeft | TurnRight deriving Show
 
-data NavPair = NP { newHeading :: Heading, value :: Int } deriving Show
+data NavPair = NP { action :: Action, value :: Int } deriving Show
 
 navpair :: ReadP NavPair
 navpair = do
@@ -33,21 +32,22 @@ navpair = do
     n <- many1(satisfy isDigit)
     eof
     return $ NP (case d of
-               'N' -> North
-               'S' -> South
-               'E' -> East
-               'W' -> West
-               'F' -> Forward
+               'N' -> Go North
+               'S' -> Go South
+               'E' -> Go East
+               'W' -> Go West
+               'F' -> Advance
                'L' -> TurnLeft
                'R' -> TurnRight) (read n)
 
-data Position = P { heading:: Heading, posX, posY :: Int } deriving Show
+data Position = P { posX, posY :: Int } deriving Show
+data FerryState = FS { heading :: Direction, position :: Position } deriving Show
 
-initial :: Position
-initial = P East 0 0
+initial :: FerryState
+initial = FS East (P 0 0)
 
 
-turnLeft, turnRight :: Int -> Heading -> Heading
+turnLeft, turnRight :: Int -> Direction -> Direction
 turnLeft 0 d = d
 turnLeft v d = turnLeft (v - 90) (rotate90 d)
   where rotate90 North = West
@@ -62,22 +62,22 @@ turnRight v d = turnRight (v - 90) (rotate90 d)
         rotate90 South = West
         rotate90 West = North
 
+translate :: Position -> Direction -> Int -> Position
+translate (P x y) North v = (P x (y + v))  -- P x . (y +)
+translate (P x y) South v = (P x (y - v))  -- P x . (y -)
+translate (P x y) East v = (P (x + v) y)   -- flip P y . (x +)
+translate (P x y) West v = (P (x - v) y)   -- flip P y . (x -)
+
 
 -- Might be an opportunity to play with lenses
-move :: NavPair -> Position -> Position
-move nav p = let newP = move' nav p in trace (show nav ++ "\n  -> " ++ show newP) newP
-  where move' (NP North v) p = p { posY = posY p + v }
-        move' (NP South v) p = p { posY = posY p - v }
-        move' (NP West v) p = p { posX = posX p - v }
-        move' (NP East v) p = p { posX = posX p + v }
-        move' nav p = let h = heading p
-	              in case newHeading nav of
-                          Forward -> move' (nav {newHeading = h}) p
-                          TurnLeft -> p { heading = turnLeft (value nav) h }
-                          TurnRight -> p { heading = turnRight (value nav) h }
+move :: NavPair -> FerryState -> FerryState
+move (NP (Go d) v) (FS h p) = FS h (translate p d v)
+move (NP Advance v) (FS h p) = FS h (translate p h v)
+move (NP TurnLeft v) (FS h p) = FS (turnLeft v h) p
+move (NP TurnRight v) (FS h p) = FS (turnRight v h) p
 
 manhatten :: Position -> Position -> Int
-manhatten (P _ x2 y2) (P _ x1 y1) = abs (x2 - x1) + abs (y2 - y1)
+manhatten (P x2 y2) (P x1 y1) = abs (x2 - x1) + abs (y2 - y1)
 
 -- readNavPairs :: FilePath -> IO [NavPair]
 readNavPairs fname = do
@@ -91,6 +91,7 @@ main = do
 
    putStrLn "Part a"
    -- traverse print navpairs
-   print $ manhatten (foldl' (flip move) initial navpairs) initial
+   let final = foldl' (flip move) initial navpairs
+   print $ manhatten (position final) (position initial)
 
    putStrLn "Part b"
