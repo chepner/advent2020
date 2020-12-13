@@ -73,10 +73,10 @@ translate (P x y) West v = (P (x - v) y)   -- flip P y . (x -)
 
 rotateLeft, rotateRight :: Position -> Int -> Position
 rotateLeft p 0 = p
-rotateLeft (P x y) 90 = P (negate y) x
-rotateLeft (P x y) 180 = P (negate x) y
-rotateLeft (P x y) 270 = P y (negate x)
-rotateLeft (P x y) 360 = P x y
+rotateLeft p 360 = rotateLeft p 0
+rotateLeft (P x y) 90 = P (negate y) x  -- (x + iy)*i == -y + ix
+rotateLeft (P x y) 180 = P (negate x) (negate y)  -- (x + iy)*i**2 == -x - iy
+rotateLeft (P x y) 270 = P y (negate x)  -- (x + iy)*(-i) == y - ix
 
 rotateRight p v = rotateLeft p (360 - v)
 
@@ -122,5 +122,5 @@ main = do
    print $ manhatten (position final_a) (position initial_a)
 
    putStrLn "Part b"
-   let final_b = foldl' (flip move_b) initial_b navpairs
+   let final_b = foldl' (flip $ debug move_b) initial_b navpairs
    print $ manhatten (position final_b) (position initial_b)
