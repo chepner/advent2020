@@ -41,10 +41,13 @@ navpair = do
                'R' -> TurnRight) (read n)
 
 data Position = P { posX, posY :: Int } deriving Show
-data FerryState = FS { heading :: Direction, position :: Position } deriving Show
+data FerryState t = FS { heading :: t, position :: Position } deriving Show
 
-initial :: FerryState
-initial = FS East (P 0 0)
+initial_a :: FerryState Direction
+initial_a = FS East (P 0 0)
+
+initial_b :: FerryState Position
+initial_b = FS (P 10 1) (P 0 0)
 
 
 turnLeft, turnRight :: Int -> Direction -> Direction
@@ -70,11 +73,11 @@ translate (P x y) West v = (P (x - v) y)   -- flip P y . (x -)
 
 
 -- Might be an opportunity to play with lenses
-move :: NavPair -> FerryState -> FerryState
-move (NP (Go d) v) (FS h p) = FS h (translate p d v)
-move (NP Advance v) (FS h p) = FS h (translate p h v)
-move (NP TurnLeft v) (FS h p) = FS (turnLeft v h) p
-move (NP TurnRight v) (FS h p) = FS (turnRight v h) p
+move_a :: NavPair -> FerryState Direction -> FerryState Direction
+move_a (NP (Go d) v) (FS h p) = FS h (translate p d v)
+move_a (NP Advance v) (FS h p) = FS h (translate p h v)
+move_a (NP TurnLeft v) (FS h p) = FS (turnLeft v h) p
+move_a (NP TurnRight v) (FS h p) = FS (turnRight v h) p
 
 manhatten :: Position -> Position -> Int
 manhatten (P x2 y2) (P x1 y1) = abs (x2 - x1) + abs (y2 - y1)
@@ -91,7 +94,7 @@ main = do
 
    putStrLn "Part a"
    -- traverse print navpairs
-   let final = foldl' (flip move) initial navpairs
-   print $ manhatten (position final) (position initial)
+   let final = foldl' (flip move_a) initial_a navpairs
+   print $ manhatten (position final) (position initial_a)
 
    putStrLn "Part b"
