@@ -71,6 +71,15 @@ translate (P x y) South v = (P x (y - v))  -- P x . (y -)
 translate (P x y) East v = (P (x + v) y)   -- flip P y . (x +)
 translate (P x y) West v = (P (x - v) y)   -- flip P y . (x -)
 
+rotateLeft, rotateRight :: Position -> Int -> Position
+rotateLeft p 0 = p
+rotateLeft (P x y) 90 = P (negate y) x
+rotateLeft (P x y) 180 = P (negate x) y
+rotateLeft (P x y) 270 = P y (negate x)
+rotateLeft (P x y) 360 = P x y
+
+rotateRight p v = rotateLeft p (360 - v)
+
 
 -- Might be an opportunity to play with lenses
 move_a :: NavPair -> FerryState Direction -> FerryState Direction
@@ -78,6 +87,18 @@ move_a (NP (Go d) v) (FS h p) = FS h (translate p d v)
 move_a (NP Advance v) (FS h p) = FS h (translate p h v)
 move_a (NP TurnLeft v) (FS h p) = FS (turnLeft v h) p
 move_a (NP TurnRight v) (FS h p) = FS (turnRight v h) p
+
+move_b :: NavPair -> FerryState Position -> FerryState Position
+move_b (NP (Go d) v) fs = fs { heading = translate (heading fs) d v }
+move_b (NP Advance v) fs = let wp = heading fs
+                               p = position fs
+                               (x, y) = (posX p, posY p)
+                               (dx, dy) = (posX wp, posY wp)
+                           in fs {position = p {posX = x + v*dx,
+                                                posY = y + v*dy}}
+move_b (NP TurnLeft v) (FS wp p) = FS (rotateLeft wp v) p
+move_b (NP TurnRight v) (FS wp p) = FS (rotateRight wp v) p
+
 
 manhatten :: Position -> Position -> Int
 manhatten (P x2 y2) (P x1 y1) = abs (x2 - x1) + abs (y2 - y1)
@@ -88,13 +109,18 @@ readNavPairs fname = do
     return $ map (fst . (!! 0) . readP_to_S navpair) contents 
 
 
+-- Used to trace the results of the foldl'
+debug f np fs = let result = f np fs in trace (show np ++ "\n ++ " ++ show result) result
+
 main = do
    args <- OA.execParser p
    navpairs <- readNavPairs (fileName args)
 
    putStrLn "Part a"
    -- traverse print navpairs
-   let final = foldl' (flip move_a) initial_a navpairs
-   print $ manhatten (position final) (position initial_a)
+   let final_a = foldl' (flip move_a) initial_a navpairs
+   print $ manhatten (position final_a) (position initial_a)
 
    putStrLn "Part b"
+   let final_b = foldl' (flip move_b) initial_b navpairs
+   print $ manhatten (position final_b) (position initial_b)
