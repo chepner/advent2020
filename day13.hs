@@ -32,7 +32,13 @@ readBusNotes fname = withFile fname ReadMode $ \fh -> do
 -- End command-line boilerplate
 main = do
    args <- OA.execParser p
-   busnotes <- readBusNotes (fileName args)
+   busnotes  <- readBusNotes (fileName args)
 
    putStrLn "Part a"
-   print busnotes
+   let ts = timestamp busnotes
+       ids = busIDs busnotes
+   let (offset, bus) = maximum ( map (\x -> (mod ts x - x, x)) ids)
+       wait = abs offset
+   print wait
+   print bus
+   print $ wait * bus
