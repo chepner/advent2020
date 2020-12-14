@@ -4,8 +4,8 @@ import Data.List
 import Data.List.Split
 import Data.Char
 import Data.Either
-import Debug.Trace
 import System.IO
+import Math.NumberTheory.Euclidean
 
 -- Command-line boilerplate
 data Options = Options {
@@ -20,45 +20,45 @@ p = OA.info (options OA.<**> OA.helper)
     ( OA.fullDesc
       <> OA.progDesc "Solve Day 10 for Advent of Code 2020"
       <> OA.header "Advent 2020: Day 10" )
+-- End command-line boilerplate
 
-data BusNotes = BusNotes { timestamp :: Int, busIDs :: [Either String Int] } deriving Show
+data BusNotes = BusNotes { timestamp :: Int
+                         , busIDs :: [Either String Int]
+                         } deriving Show
+
 
 readBusNotes :: FilePath -> IO BusNotes
 readBusNotes fname = withFile fname ReadMode $ \fh -> do
   ts <- read <$> hGetLine fh
-  idLine <- hGetLine fh
-  let ids =  splitOn "," idLine
-  return $ BusNotes ts (map (\x -> if all isDigit x then Right (read x) else Left x) ids)
+  ids <- splitOn "," <$> hGetLine fh
+  let simpleParse x = if all isDigit x
+                      then Right (read x)
+                      else Left x
+  return $ BusNotes ts (map simpleParse ids)
   
-will_depart :: Either String Int -> Int -> Bool
-will_depart (Left _) _ = True
-will_depart (Right b) ts = mod ts b == 0
-  
-part_b :: [Either String Int] -> Int -> Bool
-part_b departures t = let pairs = zip departures [t..]
-                      in all (uncurry will_depart) pairs
 
--- End command-line boilerplate
 main = do
    args <- OA.execParser p
-   busnotes  <- readBusNotes (fileName args)
+   busnotes <- readBusNotes (fileName args)
 
    putStrLn "Part a"
    let ts = timestamp busnotes
        ids = rights $ busIDs busnotes
    let (offset, bus) = maximum ( map (\x -> (mod ts x - x, x)) ids)
        wait = abs offset
-   print wait
-   print bus
    print $ wait * bus
 
-
-   -- Possibly correct, but will almost certainly be too slow.
-   -- Need a better search strategy
    putStrLn "Part b"
-   let busids = busIDs busnotes
-       firstBus = head (rights busids)
-   
-   print firstBus
-   print $ True `elemIndex` (map (part_b (busIDs busnotes)) [0,firstBus..])
+   -- The bus IDs are the moduli in a residue number system. Their position in
+   -- the list (when subtracted from the bus ID) the residue for the bus ID.
 
+   let busids = busIDs busnotes
+       pairs_to_check = [ (i, b) | (i, Right b) <- zip [(0::Int)..] busids]
+
+       (offsets, nis) = unzip pairs_to_check
+       ais = map negate offsets
+       n = product nis
+       bignis = map (div n) nis
+       bigmis = [let (_, x, _) = extendedGCD a b in x | (a, b) <- zip bignis nis]
+
+   print $ sum [x*y*z | (x, y, z) <- zip3 ais bigmis bignis] `mod` n
