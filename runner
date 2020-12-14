@@ -3,13 +3,24 @@
 import argparse
 import importlib
 from pathlib import Path
-
+import logging
 
 p = argparse.ArgumentParser()
 p.add_argument("day", type=int)
 p.add_argument("--a")
 p.add_argument("--b")
+p.add_argument("-v", type=int, default=0)
 args = p.parse_args()
+
+level_map = {
+        0: logging.CRITICAL,
+        1: logging.ERROR,
+        2: logging.WARNING,
+        3: logging.INFO,
+        4: logging.DEBUG
+}
+
+logging.basicConfig(level=level_map[args.v])
 
 module_name = f'day{args.day:02}'
 
