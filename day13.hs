@@ -3,7 +3,7 @@ import qualified Options.Applicative as OA
 import Data.List
 import Data.List.Split
 import Data.Char
-import Data.Either
+import Data.Maybe
 import System.IO
 import Math.NumberTheory.Euclidean
 
@@ -23,7 +23,7 @@ p = OA.info (options OA.<**> OA.helper)
 -- End command-line boilerplate
 
 data BusNotes = BusNotes { timestamp :: Int
-                         , busIDs :: [Either () Int]
+                         , busIDs :: [Maybe Int]
                          } deriving Show
 
 
@@ -32,8 +32,8 @@ readBusNotes fname = withFile fname ReadMode $ \fh -> do
   ts <- read <$> hGetLine fh
   ids <- splitOn "," <$> hGetLine fh
   let simpleParse x = if all isDigit x
-                      then Right (read x)
-                      else Left ()
+                      then Just (read x)
+                      else Nothing
   return $ BusNotes ts (map simpleParse ids)
   
 
@@ -43,7 +43,7 @@ main = do
 
    putStrLn "Part a"
    let ts = timestamp busnotes
-       ids = rights $ busIDs busnotes
+       ids = catMaybes $ busIDs busnotes
    let (offset, bus) = maximum ( map (\x -> (mod ts x - x, x)) ids)
        wait = abs offset
    print $ wait * bus
@@ -53,7 +53,7 @@ main = do
    -- the list (when subtracted from the bus ID) the residue for the bus ID.
 
    let busids = busIDs busnotes
-       pairs_to_check = [ (i, b) | (i, Right b) <- zip [(0::Int)..] busids]
+       pairs_to_check = [ (i, b) | (i, Just b) <- zip [(0::Int)..] busids]
 
        (offsets, nis) = unzip pairs_to_check
        ais = map negate offsets
