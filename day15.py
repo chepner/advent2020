@@ -4,44 +4,46 @@ from itertools import count, islice
 import logging
 
 
-def turn(numbers):
+def turn(numbers, n):
     tn = count(1)
     memory = {}
 
     last = None
     for x in numbers:
         t = next(tn)
-        logging.info("Turn %d", t)
-        logging.info("Yielding starting number %d", x)
+        logging.debug("Turn %d", t)
+        logging.debug("Yielding starting number %d", x)
         yield x
         if last is not None:
             memory[last] = t - 1
-            logging.info("Set memory[%d] to %s", last, memory[last])
+            logging.debug("Set memory[%d] to %s", last, memory[last])
         last = x
 
     for t in tn:
-        logging.info("Turn %d", t)
+        if t % 1000000 == 0:
+            logging.info("Turn %d/%d", t, n)
+        logging.debug("Turn %d", t)
         if last in memory:
             t0 = memory[last]
-            logging.info("Found %d in memory: %s", last, t0)
+            logging.debug("Found %d in memory: %s", last, t0)
             next_ = t - 1 - t0
             memory[last] = t - 1
-            logging.info("Yielding number %d", next_)
+            logging.debug("Yielding number %d", next_)
             yield next_
             last = next_
         else:
-            logging.info("%d not in memory", last)
+            logging.debug("%d not in memory", last)
             yield 0
             memory[last] = t - 1
             last = 0
 
 
-def _main(f:Iterable[str]):
+def _main(f:Iterable[str], n):
     numbers = [int(x) for x in  f.readline().strip().split(',')]
-    return next(islice(turn(numbers), 2019, 2020))
+    return next(islice(turn(numbers, n), n-1, n))
 
 def main_a(f: Iterable[str]):
-    return _main(f)
+    return _main(f, 2020)
 
 def main_b(f: Iterable[str]):
-    return _main(f)
+    return _main(f, 30000000)
