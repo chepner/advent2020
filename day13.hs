@@ -23,7 +23,7 @@ p = OA.info (options OA.<**> OA.helper)
 -- End command-line boilerplate
 
 data BusNotes = BusNotes { timestamp :: Int
-                         , busIDs :: [Either String Int]
+                         , busIDs :: [Either () Int]
                          } deriving Show
 
 
@@ -33,7 +33,7 @@ readBusNotes fname = withFile fname ReadMode $ \fh -> do
   ids <- splitOn "," <$> hGetLine fh
   let simpleParse x = if all isDigit x
                       then Right (read x)
-                      else Left x
+                      else Left ()
   return $ BusNotes ts (map simpleParse ids)
   
 
