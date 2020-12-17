@@ -5,7 +5,7 @@ import sys
 from itertools import product
 
 
-def parse_input(f):
+def parse_input(f, d):
     result = {}
     rows = 0
     data = []
@@ -17,26 +17,25 @@ def parse_input(f):
 
     for row in range(rows):
         for col in range(cols):
-            scaled = (row - rows//2, col - cols//2, 0)
+            scaled = (row - rows//2, col - cols//2) + (0,)*(d-2)
             result[scaled] = data[row][col]
 
     return result
 
         
-def neighbors(cell):
-    x, y, z = cell
-    for dx, dy, dz in product((-1, 0, 1), repeat=3):
-        if dx == dy == dz == 0:
+def neighbors(cell, d):
+    for d in product((-1, 0, 1), repeat=d):
+        if all(v == 0 for v in d):
             continue
-        yield x + dx, y + dy, z + dz
+        yield tuple(v + dv for v, dv in zip(cell, d))
 
 
-def step(grid):
+def step(grid, d):
     new_grid = {}
-    to_update = set(n for c in grid for n in neighbors(c))
+    to_update = set(n for c in grid for n in neighbors(c, d))
     for cell in to_update:
         state = grid.get(cell, '.')
-        active_neighbors = sum(1 for neighbor in neighbors(cell) if grid.get(neighbor, '.') == '#')
+        active_neighbors = sum(1 for neighbor in neighbors(cell, d) if grid.get(neighbor, '.') == '#')
         if state == '#':
             if active_neighbors in (2, 3):
                 new_grid[cell] = '#'
@@ -51,16 +50,16 @@ def step(grid):
 
 
 
-def _main(f:Iterable[str]):
-    grid = parse_input(f)
+def _main(f:Iterable[str], d):
+    grid = parse_input(f, d)
     for _ in range(6):
-        grid = step(grid)
+        grid = step(grid, d)
     return sum(x == '#' for x in grid.values())
 
 
 def main_a(f: Iterable[str]):
-    return _main(f)
+    return _main(f, 3)
 
 
 def main_b(f: Iterable[str]):
-    pass
+    return _main(f, 4)
