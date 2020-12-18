@@ -31,40 +31,45 @@ eval (Op Mult x y) = eval x * eval y
 
 number :: ReadP Expr
 number = do
-          n <- skipSpaces >> many1 (satisfy isDigit)
+          skipSpaces
+          n <- many1 (satisfy isDigit)
           return (IntVal (read n))
 
 group :: ReadP Expr -> ReadP Expr
-group p = do
-           skipSpaces
-           char '('
-           skipSpaces
-           e <- p
-           skipSpaces
-           char ')'
-           return e
+group p = between
+           (skipSpaces >> char '(')
+           (skipSpaces >> char ')')
+           (skipSpaces >> p)
 
 op :: ReadP (Expr -> Expr -> Expr)
 op = addOp <++ multOp
 
 addOp :: ReadP (Expr -> Expr -> Expr)
-addOp = char '+' >> return (Op Add)
+addOp = do
+          skipSpaces
+          char '+'
+          return (Op Add)
 
 multOp :: ReadP (Expr -> Expr -> Expr)
-multOp = char '*' >> return (Op Mult)
+multOp = do
+          skipSpaces
+          char '*'
+          return (Op Mult)
+
+term :: ReadP Expr ->  ReadP Expr
+term e = number <++ group e
 
 expr :: ReadP Expr
-expr = chainl1 (number <++ group expr) (skipSpaces >> op)
+expr = chainl1 (term expr) op where
 
 exprB :: ReadP Expr
-exprB = chainl1 factor (skipSpaces >> multOp)
+exprB = chainl1 factor multOp
 
 factor :: ReadP Expr
-factor = chainl1 (number <++ group exprB) (skipSpaces >> addOp)
+factor = chainl1 (term exprB) addOp
 
 fullExpr :: ReadP Expr -> ReadP Expr
-fullExpr p = p <* (skipSpaces >> eof)
-         
+fullExpr = (<* (skipSpaces >> eof))
 
 parseExpr :: ReadP Expr -> String -> Expr
 parseExpr p = fst . (!! 0) . readP_to_S (fullExpr p)
