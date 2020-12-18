@@ -31,7 +31,7 @@ eval (Op Mult x y) = eval x * eval y
 
 number :: ReadP Expr
 number = do
-          n <- many1 (satisfy isDigit)
+          n <- skipSpaces >> many1 (satisfy isDigit)
           return (IntVal (read n))
 
 group :: ReadP Expr
@@ -48,7 +48,7 @@ op :: ReadP (Expr -> Expr -> Expr)
 op = (char '+' >> return (Op Add)) <++ (char '*' >> return (Op Mult))
 
 expr :: ReadP Expr
-expr = chainl1 (skipSpaces >> (number <++ group)) (skipSpaces >> op)
+expr = chainl1 (number <++ group) (skipSpaces >> op)
 
 fullExpr :: ReadP Expr
 fullExpr = expr <* (skipSpaces >> eof)
@@ -61,9 +61,7 @@ main = do
    args <- OA.execParser p
 
    putStrLn "Part a"
-   contents <- readFile (fileName args)
-   let e = parseExpr contents
-   print e
-   print $ eval e
+   contents <- lines <$> readFile (fileName args)
+   print $ sum (map (eval . parseExpr) contents)
 
    putStrLn "Part b"
