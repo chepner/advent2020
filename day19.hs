@@ -24,7 +24,50 @@ p = OA.info (options OA.<**> OA.helper)
 -- End command-line boilerplate
 
 
--- | Assume that readS_to_P will produce a result like
+-- AST for the grammar
+-- I defined this just to figure out why my parser failed
+-- on the real input. Turned out my number parser produced
+-- too many parsers for multi-digit numbers. However, this
+-- is what I should have done from the start: build an AST,
+-- then generate the parser from that. Maybe after I solve
+-- Part 2...
+data Rule = Terminal String
+          | Nonterminal Int
+          | Group [Rule]
+          | Choice [Rule] deriving Show
+
+buildTerminalRule = do
+    skipSpaces
+    c <- quoted (many1 get)
+    return $ Terminal c
+
+buildNonterminalRule = do
+   ruleNum <- number
+   return $ Nonterminal ruleNum
+
+buildConcatRule = do
+  let tnt = buildTerminalRule <++ buildNonterminalRule
+  things <- sepBy1 tnt skipSpaces
+  return $ Group things
+
+makeRule = do
+   ruleNum <- number
+   char ':' >> skipSpaces
+   rule <- buildAlternativeRule
+   eof
+   return (ruleNum, rule)
+
+buildAlternativeRule = do
+     skipSpaces
+     let pipe = skipSpaces >> char '|' >> skipSpaces
+     possibilities <- sepBy1 (buildConcatRule) pipe
+     return $ Choice possibilities
+
+parseRule' s = readP_to_S makeRule s
+
+--- end debug section
+
+-- | Assume that readS_to_P will produce a single result like
 --   [(a,"")], and just get back the a
 runDParser :: ReadP a -> String -> Maybe a
 runDParser p s = case readP_to_S p s of
@@ -34,8 +77,22 @@ runDParser p s = case readP_to_S p s of
 quoted :: ReadP a -> ReadP a
 quoted p = between (char '"') (char '"') p
 
+digit :: ReadP Char
+digit = satisfy isDigit
+
+notDigit :: ReadP ()
+notDigit = do
+  whatsNext <- look
+  case whatsNext of
+     [] -> return ()
+     (x:xs) -> if isDigit x then pfail else return ()
+           
 number :: ReadP Int
-number = read <$> many1 (satisfy isDigit)
+number = do
+  n <- many1 (satisfy isDigit)
+  notDigit
+  return $ read n
+
 
 buildTerminal :: Grammar -> ReadP (ReadP String)
 buildTerminal _ = do
@@ -95,15 +152,8 @@ main = do
    let parser = parseGrammar grammar
        r = getRule 0 parser
 
-{-
-   putStrLn "Grammar"
-   putStrLn "======="
-   traverse_ putStrLn grammar
-
-   putStrLn "\nInput"
-   putStrLn "====="
-   traverse_ putStrLn input
--}
+   -- let structure = map parseRule' grammar
+   -- traverse print (structure !! 0)
 
    putStrLn "Part a"
    let results = map (runDParser (r <* eof)) input
