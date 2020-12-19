@@ -26,8 +26,10 @@ p = OA.info (options OA.<**> OA.helper)
 
 -- | Assume that readS_to_P will produce a result like
 --   [(a,"")], and just get back the a
-runDParser :: ReadP a -> String -> a
-runDParser p s = readP_to_S p s & (!! 0) & fst
+runDParser :: ReadP a -> String -> Maybe a
+runDParser p s = case readP_to_S p s of
+                    [(x, _)] -> Just x
+                    otherwise -> Nothing
 
 buildTerminal :: ReadP (ReadP String)
 buildTerminal = do
@@ -37,31 +39,42 @@ buildTerminal = do
 
 -- This needs to interact with the final parser, to recurively
 -- expand the rule
-buildNonterminal = return $ many1 (satisfy isDigit)
+buildNonterminal :: Grammar -> ReadP (ReadP String)
+buildNonterminal g = do
+   ruleNum <- read <$> many1 (satisfy isDigit)
+   return (getRule ruleNum g)
 
-buildAlternative = do
+buildAlternative :: Grammar -> ReadP (ReadP String)
+buildAlternative g = do
      skipSpaces
-     possibilities <- sepBy1 buildConcat (skipSpaces >> char '|' >> skipSpaces) <* eof
+     possibilities <- sepBy1 (buildConcat g) (skipSpaces >> char '|' >> skipSpaces) <* eof
      return $ asum possibilities
      
-buildConcat = do
+buildConcat :: Grammar -> ReadP (ReadP String)
+buildConcat g = do
   skipSpaces
-  t <- (buildTerminal <++ buildNonterminal)
+  t <- (buildTerminal <++ (buildNonterminal g))
   skipSpaces
-  ts <- buildConcat
+  ts <- option (pure []) (buildConcat g)
   return (liftA2 (++) t ts)
 
-buildRule = do
+buildRule :: Grammar -> ReadP (Int, ReadP String)
+buildRule g = do
    ruleNum <- read <$> many (satisfy isDigit)
    char ':'
    skipSpaces
-   rule <- buildAlternative
-   return (ruleNum :: Int, rule)
+   rule <- buildAlternative g
+   return (ruleNum, rule)
 
-parseRule s = runDParser buildRule s
+type Grammar = M.Map Int (ReadP String)
 
+parseRule :: Grammar -> String -> (Int, ReadP String)
+parseRule g s = fromJust $ runDParser (buildRule g) s
+
+-- Does... does this actually work? Building the grammar in terms of itself?
+-- It compiles, but parsing seems to be failing; that could be a problem elsewhere...
 parseGrammar :: [String] -> M.Map Int (ReadP String)
-parseGrammar = M.fromList . map parseRule
+parseGrammar s = let g = M.fromList ( map (parseRule g) s ) in g
 
 readInput :: FilePath -> IO ([String], [String])
 readInput fname = do
@@ -87,7 +100,10 @@ main = do
    traverse_ putStrLn input
 
    putStrLn "Part a"
+   let results = map (runDParser (r <* eof)) input
+   print $ length $ catMaybes results
    
-   traverse (print . runDParser r) (tail input)
+   -- traverse (print . readP_to_S (r <* eof)) input
+
 
    putStrLn "Part b"
