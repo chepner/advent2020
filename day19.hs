@@ -31,39 +31,43 @@ runDParser p s = case readP_to_S p s of
                     [(x, _)] -> Just x
                     otherwise -> Nothing
 
-buildTerminal :: ReadP (ReadP String)
-buildTerminal = do
+quoted :: ReadP a -> ReadP a
+quoted p = between (char '"') (char '"') p
+
+number :: ReadP Int
+number = read <$> many1 (satisfy isDigit)
+
+buildTerminal :: Grammar -> ReadP (ReadP String)
+buildTerminal _ = do
      skipSpaces
-     c <- between (char '"') (char '"') (many1 get)
+     c <- quoted (many1 get)
      return (string c)
 
--- This needs to interact with the final parser, to recurively
--- expand the rule
 buildNonterminal :: Grammar -> ReadP (ReadP String)
 buildNonterminal g = do
-   ruleNum <- read <$> many1 (satisfy isDigit)
+   ruleNum <- number
    return (getRule ruleNum g)
 
 buildAlternative :: Grammar -> ReadP (ReadP String)
 buildAlternative g = do
      skipSpaces
-     possibilities <- sepBy1 (buildConcat g) (skipSpaces >> char '|' >> skipSpaces) <* eof
+     let pipe = skipSpaces >> char '|' >> skipSpaces
+     possibilities <- sepBy1 (buildConcat g) pipe
      return $ asum possibilities
      
 buildConcat :: Grammar -> ReadP (ReadP String)
 buildConcat g = do
   skipSpaces
-  t <- (buildTerminal <++ (buildNonterminal g))
-  skipSpaces
+  t <- (buildTerminal g <++ buildNonterminal g)
   ts <- option (pure []) (buildConcat g)
   return (liftA2 (++) t ts)
 
 buildRule :: Grammar -> ReadP (Int, ReadP String)
 buildRule g = do
-   ruleNum <- read <$> many (satisfy isDigit)
-   char ':'
-   skipSpaces
+   ruleNum <- number
+   char ':' >> skipSpaces
    rule <- buildAlternative g
+   eof
    return (ruleNum, rule)
 
 type Grammar = M.Map Int (ReadP String)
@@ -91,6 +95,7 @@ main = do
    let parser = parseGrammar grammar
        r = getRule 0 parser
 
+{-
    putStrLn "Grammar"
    putStrLn "======="
    traverse_ putStrLn grammar
@@ -98,12 +103,11 @@ main = do
    putStrLn "\nInput"
    putStrLn "====="
    traverse_ putStrLn input
+-}
 
    putStrLn "Part a"
    let results = map (runDParser (r <* eof)) input
    print $ length $ catMaybes results
-   
-   -- traverse (print . readP_to_S (r <* eof)) input
 
 
    putStrLn "Part b"
