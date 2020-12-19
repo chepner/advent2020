@@ -155,9 +155,5 @@ main = do
    -- let structure = map parseRule' grammar
    -- traverse print (structure !! 0)
 
-   putStrLn "Part a"
    let results = map (runDParser (r <* eof)) input
    print $ length $ catMaybes results
-
-
-   putStrLn "Part b"
